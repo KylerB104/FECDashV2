@@ -1,0 +1,2022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F.E.C. Election Simulation Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0c14;--bg2:#111624;--bg3:#1a2035;--bg4:#212840;
+  --border:#2a3350;--border2:#3a4570;
+  --text:#e8eaf0;--text2:#9ba3bc;--text3:#6b7494;
+  --green:#22c55e;--green-bg:#052e16;--green-dim:#16a34a;
+  --red:#ef4444;--red-bg:#2d0a0a;--red-dim:#b91c1c;
+  --blue:#3b82f6;--blue-bg:#0f1f40;
+  --gold:#f59e0b;--gold-bg:#2d1f00;
+  --yellow:#eab308;
+  --purple:#a855f7;
+  --cyan:#06b6d4;
+  --radius:8px;--radius-lg:12px;
+  --font:'Inter',system-ui,sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;overflow-x:hidden}
+h1{font-size:22px;font-weight:600}h2{font-size:18px;font-weight:600}h3{font-size:15px;font-weight:600}
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* Sidebar */
+.sidebar{width:210px;min-width:210px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sidebar-logo{padding:16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.sidebar-logo .seal{width:36px;height:36px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;flex-shrink:0}
+.sidebar-logo h1{font-size:13px;font-weight:700;color:var(--gold);line-height:1.3}
+.nav-item{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;color:var(--text2);font-size:13px;transition:all .15s;border-left:3px solid transparent;user-select:none}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--bg3);color:#fff;border-left-color:var(--blue)}
+.nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+.nav-section{padding:10px 12px 4px;font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--text3);text-transform:uppercase}
+
+/* Main */
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+.tab-content{display:none;flex:1;padding:20px}
+.tab-content.active{display:block}
+
+/* Cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:0}
+.card-sm{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+/* Stat card */
+.stat{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center}
+.stat-val{font-size:24px;font-weight:700;color:var(--text)}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:4px;text-transform:uppercase;letter-spacing:.06em}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg3);color:var(--text);cursor:pointer;font-size:13px;font-family:var(--font);transition:all .15s;user-select:none;white-space:nowrap}
+.btn:hover{background:var(--bg4);border-color:var(--blue)}
+.btn-primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+.btn-primary:hover{background:#2563eb;border-color:#2563eb}
+.btn-success{background:var(--green-dim);border-color:var(--green);color:#fff}
+.btn-danger{background:var(--red-dim);border-color:var(--red);color:#fff}
+.btn-gold{background:var(--gold-bg);border-color:var(--gold);color:var(--gold)}
+.btn-gold:hover{background:var(--gold);color:#000}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Inputs */
+input[type=text],input[type=number],select,textarea{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:7px 10px;font-size:13px;font-family:var(--font);width:100%;outline:none;transition:border-color .15s}
+input[type=text]:focus,input[type=number]:focus,select:focus,textarea:focus{border-color:var(--blue)}
+input[type=range]{width:100%;accent-color:var(--blue);cursor:pointer;margin:4px 0}
+input[type=color]{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:2px;cursor:pointer}
+label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px}
+select option{background:var(--bg3);color:var(--text)}
+
+/* Tags */
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.tag-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-dim)}
+.tag-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-dim)}
+.tag-blue{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue)}
+.tag-gold{background:var(--gold-bg);color:var(--gold);border:1px solid rgba(245,158,11,.4)}
+.tag-gray{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
+
+/* Progress bar */
+.progress-wrap{background:var(--bg3);border-radius:4px;height:8px;overflow:hidden;flex:1;border:1px solid var(--border)}
+.progress-bar{height:100%;border-radius:4px;transition:width .6s ease}
+
+/* Page header */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.page-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+/* Candidate row */
+.candidate-row{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;transition:all .2s}
+.candidate-row.winner{border-color:var(--green);background:rgba(5,46,22,.4)}
+.candidate-row.loser{border-color:var(--border);opacity:.8}
+
+/* Tables */
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:700;color:var(--text3);text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.06em}
+td{padding:8px 10px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+
+/* Status badge */
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.04em;white-space:nowrap}
+.status-tec{background:rgba(234,179,8,.12);color:var(--yellow);border:1px solid rgba(234,179,8,.3)}
+.status-lean{background:rgba(245,158,11,.12);color:var(--gold);border:1px solid rgba(245,158,11,.3)}
+.status-likely{background:rgba(59,130,246,.12);color:var(--blue);border:1px solid rgba(59,130,246,.3)}
+.status-proj{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+.status-final{background:rgba(168,85,247,.12);color:var(--purple);border:1px solid rgba(168,85,247,.3)}
+
+/* Floating animation */
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-60px) scale(1.6)}}
+.float-anim{position:fixed;font-size:22px;font-weight:800;color:var(--green);pointer-events:none;animation:floatUp 1.2s ease-out forwards;z-index:9999;text-shadow:0 0 10px rgba(34,197,94,.5)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:24px;max-width:620px;width:92%;max-height:85vh;overflow-y:auto}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+
+/* Log */
+.log-entry{font-size:11px;color:var(--text3);padding:5px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.log-entry:last-child{border-bottom:none}
+.log-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* Divider */
+.divider{height:1px;background:var(--border);margin:16px 0}
+
+/* Flex utils */
+.flex{display:flex}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-between{justify-content:space-between}.gap-4{gap:4px}.gap-8{gap:8px}.gap-12{gap:12px}.gap-16{gap:16px}.flex-wrap{flex-wrap:wrap}
+.mt-4{margin-top:4px}.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}.mt-20{margin-top:20px}
+.mb-4{margin-bottom:4px}.mb-8{margin-bottom:8px}.mb-12{margin-bottom:12px}.mb-16{margin-bottom:16px}.mb-20{margin-bottom:20px}
+.w-full{width:100%}.text-center{text-align:center}
+
+/* Control room header */
+.control-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;flex-wrap:wrap;gap:8px}
+.live-indicator{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:pulse 1.5s infinite}
+
+/* Scenario columns */
+.scenario-col{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;flex:1;min-width:0}
+
+/* Scrollbar */
+.archive-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+.archive-item:hover{border-color:var(--blue);background:var(--bg4)}
+
+/* Tutorial step */
+.tutorial-step{background:var(--bg3);border-left:3px solid var(--blue);border-radius:0 var(--radius) var(--radius) 0;padding:14px 16px;margin-bottom:12px}
+.tutorial-step h3{color:var(--blue);margin-bottom:6px;font-size:14px}
+.tutorial-step p{color:var(--text2);font-size:13px;line-height:1.7}
+
+/* Discord output */
+.discord-output{background:#1e1f22;border:1px solid #40444b;border-radius:8px;padding:14px;font-family:'Courier New',monospace;font-size:12px;color:#dcddde;white-space:pre-wrap;word-break:break-word;line-height:1.6}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;pointer-events:none;transition:opacity .3s}
+
+/* Race card */
+.race-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+/* Responsive */
+@media(max-width:768px){
+  .sidebar{width:52px;min-width:52px}
+  .sidebar-logo h1,.nav-item span:not(.nav-icon){display:none}
+  .nav-item{justify-content:center;padding:14px 0}
+  .nav-section{display:none}
+  .grid-3,.grid-4{grid-template-columns:1fr 1fr}
+  .grid-2{grid-template-columns:1fr}
+  .page-header{flex-direction:column;align-items:flex-start}
+}
+@media(max-width:500px){
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ======== SIDEBAR ======== -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="seal">FEC</div>
+      <h1>Federal<br>Election<br>Commission</h1>
+    </div>
+    <div style="flex:1;padding:6px 0;overflow-y:auto">
+      <div class="nav-section">Main</div>
+      <div class="nav-item active" onclick="goTab('dashboard')" data-tab="dashboard"><span class="nav-icon">🏛️</span><span>Dashboard</span></div>
+      <div class="nav-section">Elections</div>
+      <div class="nav-item" onclick="goTab('primary')" data-tab="primary"><span class="nav-icon">🗳️</span><span>Presidential Primary</span></div>
+      <div class="nav-item" onclick="goTab('general')" data-tab="general"><span class="nav-icon">🇺🇸</span><span>General Election</span></div>
+      <div class="nav-item" onclick="goTab('governor')" data-tab="governor"><span class="nav-icon">🏛️</span><span>Governor Races</span></div>
+      <div class="nav-item" onclick="goTab('senate')" data-tab="senate"><span class="nav-icon">⚖️</span><span>Senate Races</span></div>
+      <div class="nav-item" onclick="goTab('house')" data-tab="house"><span class="nav-icon">🏠</span><span>House Races</span></div>
+      <div class="nav-section">Tools</div>
+      <div class="nav-item" onclick="goTab('builder')" data-tab="builder"><span class="nav-icon">🔧</span><span>Election Builder</span></div>
+      <div class="nav-item" onclick="goTab('scenario')" data-tab="scenario"><span class="nav-icon">📊</span><span>Scenario Sim</span></div>
+      <div class="nav-item" onclick="goTab('polling')" data-tab="polling"><span class="nav-icon">📈</span><span>Polling Center</span></div>
+      <div class="nav-section">Records</div>
+      <div class="nav-item" onclick="goTab('archive')" data-tab="archive"><span class="nav-icon">📁</span><span>Results Archive</span></div>
+      <div class="nav-section">System</div>
+      <div class="nav-item" onclick="goTab('settings')" data-tab="settings"><span class="nav-icon">⚙️</span><span>Settings</span></div>
+      <div class="nav-item" onclick="goTab('tutorial')" data-tab="tutorial"><span class="nav-icon">📖</span><span>Tutorial</span></div>
+    </div>
+  </nav>
+
+  <!-- ======== MAIN ======== -->
+  <div class="main">
+
+    <!-- Control Bar -->
+    <div class="control-header">
+      <div class="flex items-center gap-12">
+        <div class="live-indicator"><div class="live-dot"></div>LIVE</div>
+        <span style="font-size:12px;color:var(--text2)" id="clockDisplay"></span>
+        <span style="font-size:12px;color:var(--text3)">F.E.C. Roleplay Election System v2.0</span>
+      </div>
+      <div class="flex items-center gap-8">
+        <button class="btn btn-sm" onclick="autoSave()">💾 Save</button>
+        <button class="btn btn-sm" onclick="exportData()">📤 Export</button>
+        <button class="btn btn-sm" onclick="importData()">📥 Import</button>
+      </div>
+    </div>
+
+    <!-- ===== DASHBOARD ===== -->
+    <div class="tab-content active" id="tab-dashboard">
+      <div class="page-header">
+        <div class="page-title"><h2>🏛️ National Election Dashboard</h2><span class="tag tag-blue">ELECTION NIGHT</span></div>
+        <button class="btn btn-primary" onclick="renderDashboard()">🔄 Refresh</button>
+      </div>
+      <div class="grid-4 mb-16" id="dash-stats"></div>
+      <div class="grid-2 mb-16">
+        <div class="card"><h3 style="margin-bottom:12px;color:var(--text2)">House / Senate Control</h3><div id="dash-control"></div></div>
+        <div class="card"><h3 style="margin-bottom:12px;color:var(--text2)">Top Presidential Leaders</h3><div id="dash-pres"></div></div>
+      </div>
+      <div class="card"><h3 style="margin-bottom:12px;color:var(--text2)">All Active Races — Status Board</h3><div id="dash-races" style="overflow-x:auto"></div></div>
+      <div class="card mb-16"><h3 style="margin-bottom:12px;color:var(--text2)">&#127963; House Composition &mdash; Party Breakdown</h3><div id="dash-house-composition"></div></div>
+    </div>
+
+    <!-- ===== PRIMARY ===== -->
+    <div class="tab-content" id="tab-primary">
+      <div class="page-header">
+        <div class="page-title"><h2>🗳️ Presidential Primary</h2><span class="tag tag-gold">DELEGATES</span></div>
+        <div class="flex gap-8 flex-wrap">
+          <button class="btn" onclick="addRace('primary')">+ Add State</button>
+          <button class="btn btn-primary" onclick="recalcAll('primary')">🔄 Recalculate All</button>
+        </div>
+      </div>
+      <div id="primary-races"></div>
+    </div>
+
+    <!-- ===== GENERAL ===== -->
+    <div class="tab-content" id="tab-general">
+      <div class="page-header">
+        <div class="page-title"><h2>🇺🇸 General Presidential Election</h2><span class="tag tag-blue">ELECTORAL COLLEGE</span></div>
+        <button class="btn" onclick="addRace('general')">+ Add State</button>
+      </div>
+      <div id="general-races"></div>
+    </div>
+
+    <!-- ===== GOVERNOR ===== -->
+    <div class="tab-content" id="tab-governor">
+      <div class="page-header">
+        <div class="page-title"><h2>🏛️ Governor Races</h2></div>
+        <button class="btn" onclick="addRace('governor')">+ Add Race</button>
+      </div>
+      <div id="governor-races"></div>
+    </div>
+
+    <!-- ===== SENATE ===== -->
+    <div class="tab-content" id="tab-senate">
+      <div class="page-header">
+        <div class="page-title"><h2>⚖️ Senate Races</h2></div>
+        <button class="btn" onclick="addRace('senate')">+ Add Race</button>
+      </div>
+      <div id="senate-races"></div>
+    </div>
+
+    <!-- ===== HOUSE ===== -->
+    <div class="tab-content" id="tab-house">
+      <div class="page-header">
+        <div class="page-title"><h2>&#127968; House Races</h2><span class="tag tag-blue">5 REGIONS &middot; 33 DISTRICTS</span></div>
+        <div class="flex gap-8 flex-wrap">
+          <button class="btn" onclick="addRace('house')">+ Custom District</button>
+          <button class="btn btn-primary" onclick="recalcAll('house')">&#128260; Recalculate All</button>
+        </div>
+      </div>
+      <div class="card mb-16">
+        <div class="flex items-center justify-between mb-12 flex-wrap gap-8">
+          <h3>&#9889; Party-Wide Buff / Debuff Tool</h3>
+          <span style="font-size:12px;color:var(--text3)">Apply a modifier to ALL candidates of a party across all House districts</span>
+        </div>
+        <div class="flex gap-12 items-center flex-wrap">
+          <div style="flex:1;min-width:140px"><label>Party</label>
+            <select id="party-debuff-party">
+              <option value="DEM">DEM &mdash; Democratic</option>
+              <option value="REP">REP &mdash; Republican</option>
+              <option value="IND">IND &mdash; Independent</option>
+              <option value="LIB">LIB &mdash; Libertarian</option>
+              <option value="GRN">GRN &mdash; Green</option>
+              <option value="CON">CON &mdash; Constitution</option>
+              <option value="OTH">OTH &mdash; Other</option>
+            </select>
+          </div>
+          <div style="width:130px"><label>Modifier %</label><input type="number" id="party-debuff-val" value="-5" min="-100" max="100" step="1"></div>
+          <div style="padding-top:18px"><button class="btn btn-gold" onclick="applyPartyDebuff()">Apply to All</button></div>
+          <div style="padding-top:18px"><button class="btn btn-danger" onclick="resetPartyDebuff()">Reset Party Modifiers</button></div>
+        </div>
+        <div id="party-debuff-log" style="margin-top:10px;font-size:12px;color:var(--text3)"></div>
+      </div>
+      <div class="card mb-16">
+        <div class="flex items-center justify-between mb-12">
+          <h3>&#127963; House Composition by Party</h3>
+          <button class="btn btn-sm" onclick="renderHouseComposition()">&#128260; Update</button>
+        </div>
+        <div id="house-composition"></div>
+      </div>
+      <div class="flex gap-8 mb-16 flex-wrap" id="house-region-tabs">
+        <button class="btn active" onclick="filterHouseRegion('all',this)">All Regions</button>
+        <button class="btn" onclick="filterHouseRegion('franklin',this)">&#127987; Franklin</button>
+        <button class="btn" onclick="filterHouseRegion('dixieland',this)">&#127987; Dixieland</button>
+        <button class="btn" onclick="filterHouseRegion('lincoln',this)">&#127987; Lincoln</button>
+        <button class="btn" onclick="filterHouseRegion('sierra',this)">&#127987; Sierra</button>
+        <button class="btn" onclick="filterHouseRegion('amarillo',this)">&#127987; Amarillo</button>
+      </div>
+      <div id="house-races"></div>
+    </div>
+
+    <!-- ===== ELECTION BUILDER ===== -->
+    <div class="tab-content" id="tab-builder">
+      <div class="page-header">
+        <div class="page-title"><h2>🔧 Election Builder</h2><span class="tag tag-gray">CUSTOM RACES</span></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3 style="margin-bottom:16px">Create New Race</h3>
+          <div style="display:grid;gap:12px">
+            <div><label>Race Name</label><input type="text" id="builder-name" placeholder="e.g. New Hampshire Senate Special"></div>
+            <div><label>Race Type</label>
+              <select id="builder-type">
+                <option value="custom">Custom</option>
+                <option value="primary">Primary</option>
+                <option value="general">General Presidential</option>
+                <option value="governor">Governor</option>
+                <option value="senate">Senate</option>
+                <option value="house">House</option>
+              </select>
+            </div>
+            <div><label>State / District</label><input type="text" id="builder-state" placeholder="e.g. New Hampshire or H-7"></div>
+            <div class="grid-2">
+              <div><label>Seats / Delegates</label><input type="number" id="builder-delegates" value="1" min="1"></div>
+              <div><label>Electoral Votes</label><input type="number" id="builder-ev" value="0" min="0"></div>
+            </div>
+            <div><label>Winner Rule</label>
+              <select id="builder-rule">
+                <option value="wta">Winner-Take-All</option>
+                <option value="prop">Proportional</option>
+                <option value="top2">Top 2 Win</option>
+                <option value="top3">Top 3 Win</option>
+              </select>
+            </div>
+            <div class="grid-2">
+              <div><label>Campaign Weight %</label><input type="number" id="builder-cw" value="50" min="0" max="100"></div>
+              <div><label>Ballot Weight %</label><input type="number" id="builder-bw" value="50" min="0" max="100"></div>
+            </div>
+            <button class="btn btn-primary" onclick="createBuilderRace()">✅ Create Race</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3 style="margin-bottom:16px">All Custom Races</h3>
+          <div id="builder-templates"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SCENARIO SIMULATOR ===== -->
+    <div class="tab-content" id="tab-scenario">
+      <div class="page-header">
+        <div class="page-title"><h2>📊 Scenario Simulator</h2><span class="tag tag-gray">WHAT-IF ANALYSIS</span></div>
+      </div>
+      <div class="card mb-16">
+        <h3 style="margin-bottom:12px">Select Race to Simulate</h3>
+        <div class="flex gap-8 items-center">
+          <select id="scenario-select" style="flex:1"><option value="">— Select a race —</option></select>
+          <button class="btn btn-primary" onclick="loadScenario()">Load & Compare</button>
+        </div>
+      </div>
+      <div id="scenario-workspace"></div>
+    </div>
+
+    <!-- ===== POLLING CENTER ===== -->
+    <div class="tab-content" id="tab-polling">
+      <div class="page-header">
+        <div class="page-title"><h2>📈 Polling Center</h2></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3 style="margin-bottom:16px">Add New Poll</h3>
+          <div style="display:grid;gap:10px">
+            <div><label>Race Name</label><input type="text" id="poll-race" placeholder="e.g. Iowa Primary"></div>
+            <div><label>Pollster / Source</label><input type="text" id="poll-pollster" placeholder="e.g. CNN/SSRS"></div>
+            <div class="grid-2">
+              <div><label>Sample Size</label><input type="number" id="poll-size" placeholder="1000" min="1"></div>
+              <div><label>Margin of Error ±%</label><input type="number" id="poll-moe" step="0.1" placeholder="3.0" min="0"></div>
+            </div>
+            <div><label>Results (Name:%, Name:% …)</label><input type="text" id="poll-results" placeholder="Smith:45, Jones:38, Lee:12"></div>
+            <button class="btn btn-primary" onclick="savePoll()">Save Poll</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3 style="margin-bottom:12px">Saved Polls</h3>
+          <div id="poll-list" style="max-height:400px;overflow-y:auto"></div>
+        </div>
+      </div>
+      <div class="card mt-16">
+        <h3 style="margin-bottom:12px">Weighted Averages by Race</h3>
+        <div id="poll-averages"></div>
+      </div>
+    </div>
+
+    <!-- ===== ARCHIVE ===== -->
+    <div class="tab-content" id="tab-archive">
+      <div class="page-header">
+        <div class="page-title"><h2>📁 Results Archive</h2></div>
+        <div class="flex gap-8">
+          <input type="text" id="archive-search" placeholder="Search by name, type, state…" style="width:220px" oninput="renderArchive()">
+          <button class="btn btn-danger btn-sm" onclick="clearArchive()">🗑️ Clear All</button>
+        </div>
+      </div>
+      <div id="archive-list"></div>
+    </div>
+
+    <!-- ===== SETTINGS ===== -->
+    <div class="tab-content" id="tab-settings">
+      <div class="page-header"><div class="page-title"><h2>⚙️ Settings</h2></div></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3 style="margin-bottom:16px">System Preferences</h3>
+          <div style="display:grid;gap:16px">
+            <div class="flex items-center justify-between">
+              <div><strong>Randomness in results</strong><div style="font-size:12px;color:var(--text3)">Adds controlled volatility below 90% counted</div></div>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0"><input type="checkbox" id="set-random" onchange="saveSetting('randomness',this.checked)" checked><span style="font-size:13px">On</span></label>
+            </div>
+            <div class="divider"></div>
+            <div class="flex items-center justify-between">
+              <div><strong>Auto-save</strong><div style="font-size:12px;color:var(--text3)">Saves to localStorage automatically</div></div>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0"><input type="checkbox" id="set-autosave" onchange="saveSetting('autosave',this.checked)" checked><span style="font-size:13px">On</span></label>
+            </div>
+            <div class="divider"></div>
+            <div class="flex items-center justify-between">
+              <div><strong>Animations</strong><div style="font-size:12px;color:var(--text3)">Floating +pt indicators and effects</div></div>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0"><input type="checkbox" id="set-anim" onchange="saveSetting('animations',this.checked)" checked><span style="font-size:13px">On</span></label>
+            </div>
+            <div class="divider"></div>
+            <div class="flex items-center justify-between">
+              <div><strong>Winner-take-all (default)</strong><div style="font-size:12px;color:var(--text3)">Applied to new general election races</div></div>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0"><input type="checkbox" id="set-wta" onchange="saveSetting('wta',this.checked)" checked><span style="font-size:13px">On</span></label>
+            </div>
+            <div class="divider"></div>
+            <button class="btn btn-danger" onclick="resetAllData()">⚠️ Reset All Data</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3 style="margin-bottom:16px">About This System</h3>
+          <p style="color:var(--text2);font-size:13px;line-height:1.8">This is a <strong>roleplay Federal Election Commission</strong> simulation platform. All election data is stored locally in your browser via localStorage. Results are fully simulated and do not represent real elections.</p>
+          <div class="divider"></div>
+          <div style="font-size:12px;color:var(--text3);display:grid;gap:6px">
+            <div>Version: <strong style="color:var(--text2)">2.0 Full Build</strong></div>
+            <div>Storage: <strong style="color:var(--text2)">localStorage (browser)</strong></div>
+            <div>Charts: <strong style="color:var(--text2)">Chart.js 4.4.1</strong></div>
+          </div>
+          <div class="divider"></div>
+          <div class="flex gap-8">
+            <button class="btn btn-sm" onclick="exportData()">📤 Export JSON Backup</button>
+            <button class="btn btn-sm" onclick="importData()">📥 Import JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TUTORIAL ===== -->
+    <div class="tab-content" id="tab-tutorial">
+      <div class="page-header"><div class="page-title"><h2>📖 Tutorial & System Guide</h2></div></div>
+      <div style="max-width:720px;display:grid;gap:12px">
+        <div class="tutorial-step">
+          <h3>1. Campaign Material System</h3>
+          <p>Campaign Points are earned through actions — never entered manually. Click <strong>⚡ Campaign</strong> on any candidate to open their campaign manager.<br><br>
+          • <strong>Posters</strong>: +1pt each, unlimited uses<br>
+          • <strong>Video Ads</strong>: +2pt each, unlimited uses<br>
+          • <strong>Speeches</strong>: +1pt per 500 characters (max 2000 chars per speech), unlimited speeches<br><br>
+          Formula: <code style="background:var(--bg4);padding:2px 6px;border-radius:4px;font-size:12px">Points = (Posters × 1) + (Videos × 2) + floor(SpeechChars ÷ 500)</code></p>
+        </div>
+        <div class="tutorial-step">
+          <h3>2. Ballot vs Campaign Weighting</h3>
+          <p>Each race type uses a specific formula:<br><br>
+          • <strong>Primary</strong>: Campaign 60% + Ballot 40%<br>
+          • <strong>General / Governor / Senate</strong>: Campaign 50% + Ballot 60%<br>
+          • <strong>House</strong>: Campaign 55% + Ballot 55%<br><br>
+          Campaign % = candidate's points ÷ total points for the race<br>
+          Ballot % = candidate's votes ÷ total votes cast<br>
+          Final Score = (Campaign% × CW) + (Ballot% × BW), then buff/debuff applied</p>
+        </div>
+        <div class="tutorial-step">
+          <h3>3. Buff / Debuff System</h3>
+          <p>Each candidate can have a percentage modifier — positive for enthusiasm, endorsements, momentum; negative for scandal, controversy, or poor debate performance. Click <strong>✏️ Edit</strong> on a candidate and set the Buff/Debuff % field. Applied after the base score is calculated.</p>
+        </div>
+        <div class="tutorial-step">
+          <h3>4. Estimated Vote-In Slider</h3>
+          <p>Drag the "% Vote Counted" slider on each race:<br><br>
+          • <strong>0–50%</strong>: Too Early to Call — high volatility<br>
+          • <strong>50–80%</strong>: Leaning — moderate stability<br>
+          • <strong>80–90%</strong>: Likely — mostly stable<br>
+          • <strong>90–100%</strong>: Projected Winner / Final — locked<br><br>
+          Randomness only applies below 90%. Large leads won't flip unrealistically.</p>
+        </div>
+        <div class="tutorial-step">
+          <h3>5. Delegates System (Primary)</h3>
+          <p>In Primary races, delegates are awarded proportionally based on final score:<br><br>
+          <code style="background:var(--bg4);padding:2px 6px;border-radius:4px;font-size:12px">Delegates = round(FinalScore% × StateDelegates)</code><br><br>
+          Rounding is corrected so totals always sum to the state's delegate count. Set the delegate count on each race card.</p>
+        </div>
+        <div class="tutorial-step">
+          <h3>6. Discord F.E.C. Copy Format</h3>
+          <p>Every race has a <strong>📋 Copy F.E.C.</strong> button. It generates a properly formatted Discord message with the correct emoji IDs used by the F.E.C. roleplay server, ready to paste directly into Discord.</p>
+        </div>
+        <div class="tutorial-step">
+          <h3>7. Scenario Simulator</h3>
+          <p>Go to <strong>Scenario Sim</strong>, select any active race, and click Load. The system auto-generates a Scenario B with ±30% vote swings and ±5% buff changes, then shows side-by-side results and flags any winner changes.</p>
+        </div>
+        <div class="tutorial-step">
+          <h3>8. Results Archive</h3>
+          <p>Click <strong>📁 Archive</strong> on any race to permanently save its results. View, search, and compare archived results from the Archive tab. Data persists in localStorage.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Race Edit Modal -->
+<div class="modal-overlay" id="raceModal" style="display:none" onclick="closeModalOverlay('raceModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="modal-title">Race Details</h3>
+      <button class="btn btn-sm" onclick="document.getElementById('raceModal').style.display='none'">✕ Close</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- Campaign Modal -->
+<div class="modal-overlay" id="campaignModal" style="display:none" onclick="closeModalOverlay('campaignModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="campaign-modal-title">Campaign Manager</h3>
+      <button class="btn btn-sm" onclick="document.getElementById('campaignModal').style.display='none'">✕ Close</button>
+    </div>
+    <div id="campaign-modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+//  STATE
+// ================================================================
+let state = {
+  races: {},
+  polls: [],
+  archive: [],
+  settings: { randomness:true, autosave:true, animations:true, wta:true },
+  nextId: 1
+};
+
+const RACE_CFG = {
+  primary:  { label:'Presidential Primary',  cw:0.60, bw:0.40, delegates:true  },
+  general:  { label:'General Election',      cw:0.50, bw:0.60, delegates:false },
+  governor: { label:'Governor',              cw:0.50, bw:0.60, delegates:false },
+  senate:   { label:'Senate',                cw:0.50, bw:0.60, delegates:false },
+  house:    { label:'House',                 cw:0.55, bw:0.55, delegates:false },
+  custom:   { label:'Custom',                cw:0.50, bw:0.50, delegates:false },
+};
+
+// ================================================================
+//  PERSISTENCE
+// ================================================================
+function loadState() {
+  try {
+    const s = localStorage.getItem('fec_v2_state');
+    if (s) state = JSON.parse(s);
+  } catch(e) { console.warn('Load state error:', e); }
+  applySettings();
+}
+
+function saveState() {
+  if (state.settings.autosave) {
+    try { localStorage.setItem('fec_v2_state', JSON.stringify(state)); } catch(e) {}
+  }
+}
+
+function autoSave() { saveState(); showToast('💾 Saved!'); }
+
+function resetAllData() {
+  if (confirm('⚠️ Reset ALL data? This cannot be undone.')) {
+    localStorage.removeItem('fec_v2_state');
+    location.reload();
+  }
+}
+
+function saveSetting(k, v) { state.settings[k] = v; saveState(); }
+
+function applySettings() {
+  const ids = { random:'set-random', autosave:'set-autosave', animations:'set-anim', wta:'set-wta' };
+  const map = { random:'randomness', autosave:'autosave', animations:'animations', wta:'wta' };
+  for (const [id, key] of Object.entries(map)) {
+    const el = document.getElementById('set-'+id.replace('set-',''));
+    if (el) el.checked = state.settings[key] !== false;
+  }
+  try {
+    document.getElementById('set-random').checked   = state.settings.randomness  !== false;
+    document.getElementById('set-autosave').checked = state.settings.autosave    !== false;
+    document.getElementById('set-anim').checked     = state.settings.animations  !== false;
+    document.getElementById('set-wta').checked      = state.settings.wta         !== false;
+  } catch(e) {}
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `fec-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  showToast('📤 Exported!');
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const imported = JSON.parse(ev.target.result);
+        if (imported.races && imported.settings) {
+          state = imported;
+          saveState();
+          location.reload();
+        } else {
+          showToast('Invalid backup file', 'error');
+        }
+      } catch(err) { showToast('Failed to parse file', 'error'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ================================================================
+//  NAVIGATION
+// ================================================================
+function goTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  const navEl = document.querySelector(`[data-tab="${tab}"]`);
+  if (navEl) navEl.classList.add('active');
+  renderTab(tab);
+}
+
+function renderTab(tab) {
+  switch(tab) {
+    case 'dashboard': renderDashboard(); break;
+    case 'primary':   renderRaceList('primary'); break;
+    case 'general':   renderRaceList('general'); break;
+    case 'governor':  renderRaceList('governor'); break;
+    case 'senate':    renderRaceList('senate'); break;
+    case 'house':     renderRaceList('house'); renderHouseComposition(); break;
+    case 'builder':   renderBuilder(); break;
+    case 'scenario':  populateScenarioSelect(); break;
+    case 'polling':   renderPolls(); break;
+    case 'archive':   renderArchive(); break;
+  }
+}
+
+// ================================================================
+//  RACE OBJECTS
+// ================================================================
+function newRaceObj(type, name, stateName) {
+  const cfg = RACE_CFG[type] || RACE_CFG.custom;
+  return {
+    id: 'r' + (state.nextId++),
+    type, name: name || cfg.label + ' Race',
+    state: stateName || '',
+    delegates: 10, electoralVotes: 0,
+    winnerRule: state.settings.wta ? 'wta' : 'prop',
+    pctIn: 0,
+    candidates: [],
+    customCw: null, customBw: null
+  };
+}
+
+function newCandidate(name) {
+  const colors = ['#3b82f6','#ef4444','#22c55e','#f59e0b','#a855f7','#06b6d4','#f97316','#ec4899','#14b8a6','#84cc16'];
+  return {
+    id: 'c' + Math.random().toString(36).slice(2,9),
+    name: name || 'Candidate',
+    party: '', color: colors[Math.floor(Math.random()*colors.length)],
+    votes: 0, buff: 0, notes: '',
+    campaign: {
+      posters: 0, videos: 0, speechChars: 0, speechText: '',
+      cooldowns: { poster: 0, video: 0, speech: 0 },
+      log: []
+    }
+  };
+}
+
+function addRace(type) {
+  const name = prompt(`Race name for this ${RACE_CFG[type].label}:`, '');
+  if (!name) return;
+  const sn = prompt('State or district:', '') || '';
+  const r = newRaceObj(type, name.trim(), sn.trim());
+  state.races[r.id] = r;
+  saveState();
+  renderRaceList(type);
+}
+
+function deleteRace(raceId) {
+  if (!confirm('Delete this race and all its data?')) return;
+  delete state.races[raceId];
+  saveState();
+  const r = document.getElementById('race-card-'+raceId);
+  if (r) r.remove();
+}
+
+function addCandidate(raceId) {
+  const PARTY_COLORS_MAP = { DEM:'#3b82f6', REP:'#ef4444', IND:'#22c55e', LIB:'#f59e0b', GRN:'#16a34a', CON:'#a855f7', OTH:'#9ba3bc' };
+  document.getElementById('modal-title').textContent = '+ Add Candidate';
+  document.getElementById('raceModal').style.display = 'flex';
+  document.getElementById('modal-body').innerHTML = `
+    <div style="display:grid;gap:14px">
+      <div><label>Full Name</label><input type="text" id="nc-name" placeholder="e.g. John Smith" autofocus></div>
+      <div><label>Party</label>
+        <select id="nc-party" onchange="document.getElementById('nc-color').value=({'DEM':'#3b82f6','REP':'#ef4444','IND':'#22c55e','LIB':'#f59e0b','GRN':'#16a34a','CON':'#a855f7','OTH':'#9ba3bc'})[this.value]||'#9ba3bc'">
+          <option value="DEM">DEM &mdash; Democratic</option>
+          <option value="REP">REP &mdash; Republican</option>
+          <option value="IND">IND &mdash; Independent</option>
+          <option value="LIB">LIB &mdash; Libertarian</option>
+          <option value="GRN">GRN &mdash; Green</option>
+          <option value="CON">CON &mdash; Constitution</option>
+          <option value="OTH">OTH &mdash; Other</option>
+        </select>
+      </div>
+      <div class="grid-2">
+        <div><label>Color (auto-set by party)</label><input type="color" id="nc-color" value="#3b82f6" style="height:38px;width:100%"></div>
+        <div><label>Ballot Votes</label><input type="number" id="nc-votes" value="0" min="0"></div>
+      </div>
+      <div><label>Buff / Debuff %</label><input type="number" id="nc-buff" value="0" min="-100" max="100"></div>
+      <button class="btn btn-primary" onclick="saveNewCandidate('${raceId}')">Add Candidate</button>
+    </div>
+  `;
+}
+
+function saveNewCandidate(raceId) {
+  const name = document.getElementById('nc-name').value.trim();
+  if (!name) { showToast('Enter a name', 'error'); return; }
+  const c = newCandidate(name);
+  c.party = document.getElementById('nc-party').value;
+  c.color = document.getElementById('nc-color').value;
+  c.votes = Number(document.getElementById('nc-votes').value) || 0;
+  c.buff  = Number(document.getElementById('nc-buff').value)  || 0;
+  state.races[raceId].candidates.push(c);
+  saveState();
+  document.getElementById('raceModal').style.display = 'none';
+  renderRaceCard(raceId);
+  if (state.races[raceId].type === 'house') renderHouseComposition();
+}
+
+function removeCandidate(raceId, cid) {
+  state.races[raceId].candidates = state.races[raceId].candidates.filter(c => c.id !== cid);
+  saveState();
+  renderRaceCard(raceId);
+}
+
+// ================================================================
+//  CAMPAIGN SYSTEM
+// ================================================================
+function campaignPoints(c) {
+  return (c.campaign.posters * 1) + (c.campaign.videos * 2) + Math.floor((c.campaign.speechChars || 0) / 500);
+}
+
+function openCampaignModal(raceId, cid) {
+  const r = state.races[raceId];
+  const c = r.candidates.find(x => x.id === cid);
+  document.getElementById('campaign-modal-title').textContent = `⚡ Campaign Manager — ${c.name}`;
+  document.getElementById('campaignModal').style.display = 'flex';
+  renderCampaignModal(raceId, cid);
+}
+
+function renderCampaignModal(raceId, cid) {
+  const r = state.races[raceId];
+  const c = r.candidates.find(x => x.id === cid);
+  const pts = campaignPoints(c);
+
+  document.getElementById('campaign-modal-body').innerHTML = `
+    <div class="grid-4 mb-16">
+      <div class="stat"><div class="stat-val" style="color:var(--gold)">${pts}</div><div class="stat-lbl">Total Points</div></div>
+      <div class="stat"><div class="stat-val">${c.campaign.posters}</div><div class="stat-lbl">Posters</div></div>
+      <div class="stat"><div class="stat-val">${c.campaign.videos}</div><div class="stat-lbl">Videos</div></div>
+      <div class="stat"><div class="stat-val">${c.campaign.speechChars}</div><div class="stat-lbl">Speech Chars</div></div>
+    </div>
+
+    <div class="card-sm mb-12">
+      <div class="flex items-center justify-between mb-8">
+        <div><strong>📋 Poster Campaign</strong> <span style="font-size:11px;color:var(--text3)">+1pt per poster</span></div>
+        <span style="font-size:11px;color:var(--text2)">Used: ${c.campaign.posters}</span>
+      </div>
+      <button class="btn btn-success" onclick="doCampaignAction('${raceId}','${cid}','poster')">📋 Post Poster (+1pt)</button>
+    </div>
+
+    <div class="card-sm mb-12">
+      <div class="flex items-center justify-between mb-8">
+        <div><strong>🎥 Video Advertisement</strong> <span style="font-size:11px;color:var(--text3)">+2pt per video</span></div>
+        <span style="font-size:11px;color:var(--text2)">Used: ${c.campaign.videos}</span>
+      </div>
+      <button class="btn btn-primary" onclick="doCampaignAction('${raceId}','${cid}','video')">🎥 Run Video Ad (+2pt)</button>
+    </div>
+
+    <div class="card-sm mb-12">
+      <div class="flex items-center justify-between mb-8">
+        <div><strong>🎤 Campaign Speech</strong> <span style="font-size:11px;color:var(--text3)">+1pt per 500 chars (max 2000 chars per speech)</span></div>
+        <span style="font-size:11px;color:var(--text2)">Speeches: ${c.campaign.speechCount||0}</span>
+      </div>
+      <textarea id="speech-input-${cid}" style="height:100px;margin-bottom:8px;resize:vertical"
+        maxlength="2000" placeholder="Write the campaign speech here. Every 500 characters = +1 campaign point…"
+        oninput="document.getElementById('sc-${cid}').textContent=this.value.length+'/2000'"></textarea>
+      <div class="flex items-center justify-between">
+        <span id="sc-${cid}" style="font-size:12px;color:var(--text3)">0/2000</span>
+        <button class="btn btn-gold btn-sm" onclick="doCampaignAction('${raceId}','${cid}','speech')">🎤 Deliver Speech</button>
+      </div>
+      ${c.campaign.speechCount > 0 ? `<div style="margin-top:8px;font-size:11px;color:var(--text3)">Last speech: ${c.campaign.speechChars} chars = +${Math.floor(c.campaign.speechChars/500)}pt</div>` : ''}
+    </div>
+
+    <div class="card-sm">
+      <strong style="font-size:12px;color:var(--text2)">Activity Log</strong>
+      <div style="max-height:160px;overflow-y:auto;margin-top:8px">
+        ${(c.campaign.log || []).slice(-20).reverse().map(l =>
+          `<div class="log-entry"><div class="log-dot" style="background:var(--green)"></div>${l}</div>`
+        ).join('') || '<div style="color:var(--text3);font-size:12px;padding:8px 0">No campaign activity yet.</div>'}
+      </div>
+    </div>
+  `;
+}
+
+function doCampaignAction(raceId, cid, type) {
+  const r = state.races[raceId];
+  const c = r.candidates.find(x => x.id === cid);
+  let pts = 0, msg = '';
+
+  if (type === 'poster') {
+    c.campaign.posters++;
+    pts = 1;
+    msg = `📋 Poster posted (total: ${c.campaign.posters}) → +1pt`;
+  } else if (type === 'video') {
+    c.campaign.videos++;
+    pts = 2;
+    msg = `🎥 Video ad aired (total: ${c.campaign.videos}) → +2pt`;
+  } else if (type === 'speech') {
+    const txt = (document.getElementById('speech-input-'+cid)?.value || '').trim();
+    if (!txt.length) { showToast('Write a speech first!', 'error'); return; }
+    const chars = Math.min(txt.length, 2000);
+    c.campaign.speechText  = txt;
+    c.campaign.speechChars += chars;
+    c.campaign.speechCount  = (c.campaign.speechCount || 0) + 1;
+    pts = Math.floor(chars / 500);
+    msg = `🎤 Speech delivered (${chars} chars) → +${pts}pt`;
+  }
+
+  if (pts === 0 && type !== 'speech') return;
+  c.campaign.log.push(`[${new Date().toLocaleTimeString()}] ${msg}`);
+  saveState();
+  showFloatingPts(pts);
+  renderCampaignModal(raceId, cid);
+  renderRaceCard(raceId);
+}
+
+function showFloatingPts(pts) {
+  if (!state.settings.animations) return;
+  const el = document.createElement('div');
+  el.className = 'float-anim';
+  el.textContent = `+${pts}pt`;
+  el.style.cssText = `left:${Math.random()*60+20}%;top:${window.innerHeight/2}px`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+
+// ================================================================
+//  CALCULATIONS
+// ================================================================
+function calcRace(r) {
+  const cfg = RACE_CFG[r.type] || RACE_CFG.custom;
+  const cw = r.customCw !== null && r.customCw !== undefined ? r.customCw : cfg.cw;
+  const bw = r.customBw !== null && r.customBw !== undefined ? r.customBw : cfg.bw;
+
+  const totalVotes    = r.candidates.reduce((s, c) => s + Number(c.votes || 0), 0);
+  const totalCampaign = r.candidates.reduce((s, c) => s + campaignPoints(c), 0);
+  const pctIn = Number(r.pctIn || 0);
+
+  let results = r.candidates.map(c => {
+    const ballotPct   = totalVotes    > 0 ? Number(c.votes || 0) / totalVotes    : 0;
+    const campaignPct = totalCampaign > 0 ? campaignPoints(c)    / totalCampaign : 0;
+    let base = (campaignPct * cw) + (ballotPct * bw);
+
+    // Controlled randomness
+    if (state.settings.randomness && pctIn < 90) {
+      const vol = pctIn < 50 ? 0.06 : pctIn < 80 ? 0.03 : 0.01;
+      base += (Math.random() - 0.5) * 2 * vol;
+    }
+
+    // Buff/debuff
+    const mod = Number(c.buff || 0) / 100;
+    const finalScore = Math.max(0, base + base * mod);
+
+    return {
+      id: c.id, name: c.name, party: c.party, color: c.color,
+      votes: Number(c.votes || 0), buff: Number(c.buff || 0),
+      campaignPts: campaignPoints(c),
+      campaignPct: campaignPct * 100,
+      ballotPct: ballotPct * 100,
+      finalScore: finalScore * 100,
+      delegates: 0
+    };
+  });
+
+  // Normalize to 100%
+  const total = results.reduce((s, x) => s + x.finalScore, 0);
+  if (total > 0) results.forEach(x => { x.finalScore = (x.finalScore / total) * 100; });
+
+  results.sort((a, b) => b.finalScore - a.finalScore);
+
+  // Delegate allocation
+  if (cfg.delegates && r.delegates > 0) {
+    results.forEach(x => { x.delegates = Math.round((x.finalScore / 100) * r.delegates); });
+    const sum = results.reduce((s, x) => s + x.delegates, 0);
+    if (sum !== r.delegates && results.length > 0) results[0].delegates += (r.delegates - sum);
+  }
+
+  const status = pctIn >= 100 ? 'final' : pctIn >= 90 ? 'projected' : pctIn >= 80 ? 'likely' : pctIn >= 50 ? 'leaning' : 'tec';
+  return { results, status, pctIn, cw, bw };
+}
+
+function getStatusBadge(s) {
+  const map = {
+    tec:       ['status-tec',   '⏳ Too Early to Call'],
+    leaning:   ['status-lean',  '📊 Leaning'],
+    likely:    ['status-likely','📈 Likely'],
+    projected: ['status-proj',  '✅ Projected Winner'],
+    final:     ['status-final', '🏁 Final Results'],
+  };
+  const [cls, lbl] = map[s] || map.tec;
+  return `<span class="status-badge ${cls}">${lbl}</span>`;
+}
+
+// ================================================================
+//  RENDER RACE LIST
+// ================================================================
+function renderRaceList(type) {
+  const container = document.getElementById(`${type}-races`);
+  if (!container) return;
+  const races = Object.values(state.races).filter(r => r.type === type);
+  if (races.length === 0) {
+    container.innerHTML = `<div class="card text-center" style="color:var(--text3);padding:48px 20px">
+      <div style="font-size:40px;margin-bottom:12px">&#128371;</div>
+      <div>No ${RACE_CFG[type].label} races yet.</div>
+      <div style="margin-top:8px;font-size:12px">Click "+ Add" in the header to create one.</div>
+    </div>`;
+    return;
+  }
+
+  if (type === 'house') {
+    // Group by region
+    const byRegion = {};
+    races.forEach(r => {
+      const reg = r.region || 'other';
+      if (!byRegion[reg]) byRegion[reg] = [];
+      byRegion[reg].push(r);
+    });
+    container.innerHTML = '';
+    const regionOrder = ['franklin','dixieland','lincoln','sierra','amarillo','other'];
+    regionOrder.forEach(reg => {
+      if (!byRegion[reg]) return;
+      const header = document.createElement('div');
+      header.style.cssText = `display:flex;align-items:center;gap:10px;margin:16px 0 10px;padding-bottom:8px;border-bottom:2px solid ${REGION_COLORS[reg]||'var(--border)'}`;
+      header.innerHTML = `<span style="font-size:16px;font-weight:700;color:${REGION_COLORS[reg]||'var(--text)'}">${REGION_LABELS[reg]||reg} Region</span><span style="font-size:12px;color:var(--text3)">${byRegion[reg].length} district${byRegion[reg].length!==1?'s':''}</span>`;
+      container.appendChild(header);
+      byRegion[reg].forEach(r => {
+        const div = document.createElement('div');
+        div.id = `race-card-${r.id}`;
+        container.appendChild(div);
+        renderRaceCard(r.id);
+      });
+    });
+    renderHouseComposition();
+  } else {
+    container.innerHTML = '';
+    races.forEach(r => {
+      const div = document.createElement('div');
+      div.id = `race-card-${r.id}`;
+      container.appendChild(div);
+      renderRaceCard(r.id);
+    });
+  }
+}
+
+function renderRaceCard(raceId) {
+  const r = state.races[raceId];
+  if (!r) return;
+  const el = document.getElementById(`race-card-${raceId}`);
+  if (!el) return;
+  const cfg = RACE_CFG[r.type] || RACE_CFG.custom;
+  const calc = calcRace(r);
+
+  const candidateRows = r.candidates.map((c, i) => {
+    const res = calc.results.find(x => x.id === c.id) || {};
+    const isWinner = i === 0 && r.candidates.length > 1;
+    const pct = (res.finalScore || 0).toFixed(1);
+    const camPct = (res.campaignPct || 0).toFixed(1);
+    const ballPct = (res.ballotPct  || 0).toFixed(1);
+    const pts = campaignPoints(c);
+    return `
+      <div class="candidate-row ${isWinner ? 'winner' : 'loser'}">
+        <div class="flex items-center justify-between flex-wrap gap-8">
+          <div class="flex items-center gap-8">
+            <div style="width:14px;height:14px;border-radius:3px;background:${c.color};flex-shrink:0"></div>
+            ${isWinner ? '<span style="color:var(--gold);font-size:16px">🏆</span>' : ''}
+            <strong style="font-size:14px">${c.name}</strong>
+            ${c.party ? `<span class="tag tag-gray">${c.party}</span>` : ''}
+            ${c.buff !== 0 ? `<span class="tag ${c.buff > 0 ? 'tag-green' : 'tag-red'}">${c.buff > 0 ? '+' : ''}${c.buff}%</span>` : ''}
+          </div>
+          <div class="flex items-center gap-8">
+            ${cfg.delegates ? `<span class="tag tag-gold">🏅 ${res.delegates || 0} del</span>` : ''}
+            <span style="font-size:18px;font-weight:700;color:${isWinner ? 'var(--green)' : c.color}">${pct}%</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-8 mt-8">
+          <div class="progress-wrap"><div class="progress-bar" style="width:${Math.min(parseFloat(pct),100)}%;background:${c.color}"></div></div>
+          <span style="font-size:11px;color:var(--text3);min-width:36px">${pct}%</span>
+        </div>
+        <div class="flex gap-16 mt-8 flex-wrap" style="font-size:11px;color:var(--text3)">
+          <span>⚡ ${pts}pt campaign</span>
+          <span>📊 ${camPct}% camp weight</span>
+          <span>🗳️ ${ballPct}% ballot weight</span>
+          ${c.buff !== 0 ? `<span>🎯 ${c.buff > 0 ? '+' : ''}${c.buff}% modifier</span>` : ''}
+          ${c.notes ? `<span>📝 ${c.notes}</span>` : ''}
+        </div>
+        <div class="flex gap-8 mt-8 flex-wrap">
+          <button class="btn btn-sm btn-gold" onclick="openCampaignModal('${raceId}','${c.id}')">⚡ Campaign</button>
+          <button class="btn btn-sm" onclick="editCandidate('${raceId}','${c.id}')">✏️ Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="removeCandidate('${raceId}','${c.id}')">✕ Remove</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  el.className = 'race-card';
+  el.innerHTML = `
+    <div class="flex items-center justify-between flex-wrap gap-8 mb-12">
+      <div class="flex items-center gap-12 flex-wrap">
+        <h3>${r.name}</h3>
+        ${r.state ? `<span class="tag tag-blue">${r.state}</span>` : ''}
+        ${getStatusBadge(calc.status)}
+      </div>
+      <div class="flex gap-8 flex-wrap">
+        <button class="btn btn-sm" onclick="addCandidate('${raceId}')">+ Candidate</button>
+        <button class="btn btn-sm btn-primary" onclick="copyDiscordFormat('${raceId}')">📋 Copy F.E.C.</button>
+        <button class="btn btn-sm btn-gold" onclick="archiveRace('${raceId}')">📁 Archive</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteRace('${raceId}')">🗑️</button>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-16 mb-12 flex-wrap">
+      <div style="flex:1;min-width:200px">
+        <label>% Vote Counted: <strong style="color:var(--text)">${r.pctIn}%</strong></label>
+        <input type="range" min="0" max="100" value="${r.pctIn}" step="1"
+          oninput="updatePctIn('${raceId}',this.value)">
+      </div>
+      ${cfg.delegates ? `
+        <div><label>State Delegates</label>
+          <input type="number" value="${r.delegates}" min="1" style="width:80px"
+            oninput="updateDelegate('${raceId}',this.value)"></div>` : ''}
+      ${r.type === 'general' ? `
+        <div><label>Electoral Votes</label>
+          <input type="number" value="${r.electoralVotes}" min="0" style="width:80px"
+            oninput="updateEV('${raceId}',this.value)"></div>` : ''}
+    </div>
+
+    ${candidateRows || `<div style="color:var(--text3);text-align:center;padding:24px;font-size:13px">No candidates yet — click <strong>+ Candidate</strong> to add one.</div>`}
+    <div id="chart-${raceId}" style="margin-top:12px"></div>
+  `;
+
+  renderRaceChart(raceId, calc);
+}
+
+const chartInstances = {};
+
+function renderRaceChart(raceId, calc) {
+  const area = document.getElementById(`chart-${raceId}`);
+  if (!area || calc.results.length === 0) return;
+  const cid = `canvas-${raceId}`;
+  const h = Math.max(160, calc.results.length * 44 + 60);
+  area.innerHTML = `<div style="position:relative;height:${h}px"><canvas id="${cid}" role="img" aria-label="Election results bar chart for race ${raceId}"></canvas></div>`;
+
+  setTimeout(() => {
+    const ctx = document.getElementById(cid);
+    if (!ctx) return;
+    if (chartInstances[raceId]) { chartInstances[raceId].destroy(); }
+    chartInstances[raceId] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: calc.results.map(x => x.name),
+        datasets: [{
+          label: 'Final Score %',
+          data: calc.results.map(x => parseFloat(x.finalScore.toFixed(1))),
+          backgroundColor: calc.results.map(x => x.color + 'aa'),
+          borderColor: calc.results.map(x => x.color),
+          borderWidth: 2,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: {
+          callbacks: { label: ctx => ` ${ctx.parsed.x.toFixed(1)}%` }
+        }},
+        scales: {
+          x: { min:0, max:100, ticks:{ color:'#6b7494', callback: v => v+'%' }, grid:{ color:'#2a3350' }},
+          y: { ticks:{ color:'#9ba3bc' }, grid:{ display:false }}
+        }
+      }
+    });
+  }, 80);
+}
+
+function updatePctIn(raceId, val) {
+  state.races[raceId].pctIn = Number(val);
+  saveState();
+  renderRaceCard(raceId);
+}
+function updateDelegate(raceId, val) { state.races[raceId].delegates = Number(val)||1; saveState(); renderRaceCard(raceId); }
+function updateEV(raceId, val) { state.races[raceId].electoralVotes = Number(val)||0; saveState(); }
+
+// ================================================================
+//  CANDIDATE EDITOR
+// ================================================================
+function editCandidate(raceId, cid) {
+  const c = state.races[raceId].candidates.find(x => x.id === cid);
+  document.getElementById('modal-title').textContent = `✏️ Edit Candidate`;
+  document.getElementById('raceModal').style.display = 'flex';
+  document.getElementById('modal-body').innerHTML = `
+    <div style="display:grid;gap:14px">
+      <div><label>Full Name</label><input type="text" id="e-name" value="${c.name}"></div>
+      <div class="grid-2">
+        <div><label>Party (optional)</label><input type="text" id="e-party" value="${c.party||''}" placeholder="DEM / REP / IND…"></div>
+        <div><label>Color</label><input type="color" id="e-color" value="${c.color}" style="height:38px;width:100%"></div>
+      </div>
+      <div><label>Ballot Votes (raw count)</label><input type="number" id="e-votes" value="${c.votes||0}" min="0"></div>
+      <div><label>Buff / Debuff % (positive = boost, negative = penalty)</label><input type="number" id="e-buff" value="${c.buff||0}" min="-100" max="100" step="1"></div>
+      <div><label>Notes (optional)</label><input type="text" id="e-notes" value="${c.notes||''}" placeholder="e.g. endorsement from governor"></div>
+      <button class="btn btn-primary" onclick="saveEditCandidate('${raceId}','${cid}')">✅ Save Changes</button>
+    </div>
+  `;
+}
+
+function saveEditCandidate(raceId, cid) {
+  const r = state.races[raceId];
+  const c = r.candidates.find(x => x.id === cid);
+  c.name  = document.getElementById('e-name').value.trim() || c.name;
+  c.party = document.getElementById('e-party').value.trim();
+  c.color = document.getElementById('e-color').value;
+  c.votes = Number(document.getElementById('e-votes').value) || 0;
+  c.buff  = Number(document.getElementById('e-buff').value)  || 0;
+  c.notes = document.getElementById('e-notes').value.trim();
+  saveState();
+  document.getElementById('raceModal').style.display = 'none';
+  renderRaceCard(raceId);
+}
+
+function closeModalOverlay(id) { document.getElementById(id).style.display = 'none'; }
+
+// ================================================================
+//  DISCORD FORMAT
+// ================================================================
+function copyDiscordFormat(raceId) {
+  const r = state.races[raceId];
+  const calc = calcRace(r);
+  const cfg = RACE_CFG[r.type] || RACE_CFG.custom;
+  const typeLabel = {
+    primary:'PRIMARY', general:'PRESIDENTIAL', governor:'GOVERNOR',
+    senate:'SENATE', house:'HOUSE', custom:'ELECTION'
+  }[r.type] || 'ELECTION';
+
+  const winner = calc.results[0];
+  let out = `FEC: ${r.state || r.name} ${typeLabel} RACE\n`;
+  out += `<a:checkmark:1512234856145490035> ${winner?.name || 'TBD'} — PROJECTED WINNER\n\n`;
+
+  calc.results.forEach((x, i) => {
+    const pct = x.finalScore.toFixed(1);
+    const del = cfg.delegates ? ` (${x.delegates} delegates)` : '';
+    out += `${i === 0 ? '🏆 ' : ''}${x.name} : ${pct}%${del}\n`;
+  });
+
+  out += `\nEst % in: ${r.pctIn}%`;
+  out += `\n<:FEC:1424668953493504070> | Official F.E.C. Results`;
+
+  document.getElementById('modal-title').textContent = '📋 Official F.E.C. Results';
+  document.getElementById('raceModal').style.display = 'flex';
+  document.getElementById('modal-body').innerHTML = `
+    <p style="font-size:12px;color:var(--text3);margin-bottom:10px">Copy and paste this into your Discord server:</p>
+    <div class="discord-output">${out}</div>
+    <button class="btn btn-primary mt-16" onclick="navigator.clipboard.writeText(${JSON.stringify(out)}).then(()=>{showToast('📋 Copied to clipboard!')})">
+      📋 Copy to Clipboard
+    </button>
+  `;
+}
+
+// ================================================================
+//  ARCHIVE
+// ================================================================
+function archiveRace(raceId) {
+  const r = state.races[raceId];
+  const calc = calcRace(r);
+  state.archive.unshift({
+    id: 'a' + Date.now(),
+    raceId, name: r.name, type: r.type, state: r.state,
+    savedAt: new Date().toLocaleString(),
+    results: calc.results,
+    pctIn: r.pctIn,
+    delegates: r.delegates
+  });
+  saveState();
+  showToast('📁 Race archived!');
+}
+
+function renderArchive() {
+  const container = document.getElementById('archive-list');
+  if (!container) return;
+  const q = (document.getElementById('archive-search')?.value || '').toLowerCase();
+  const items = state.archive.filter(a =>
+    a.name.toLowerCase().includes(q) ||
+    a.type.includes(q) ||
+    (a.state||'').toLowerCase().includes(q)
+  );
+  if (items.length === 0) {
+    container.innerHTML = `<div class="card text-center" style="color:var(--text3);padding:48px">
+      <div style="font-size:40px;margin-bottom:12px">📁</div>
+      <div>${state.archive.length === 0 ? 'No archived results yet. Run races and click "📁 Archive".' : 'No results match your search.'}</div>
+    </div>`;
+    return;
+  }
+  container.innerHTML = items.map(a => `
+    <div class="archive-item" onclick="showArchiveDetail('${a.id}')">
+      <div class="flex items-center justify-between flex-wrap gap-8">
+        <div class="flex items-center gap-8">
+          <strong>${a.name}</strong>
+          <span class="tag tag-gray">${a.type}</span>
+          ${a.state ? `<span class="tag tag-blue">${a.state}</span>` : ''}
+        </div>
+        <span style="font-size:11px;color:var(--text3)">${a.savedAt} · ${a.pctIn}% in</span>
+      </div>
+      <div class="flex gap-8 mt-8 flex-wrap">
+        ${(a.results || []).slice(0,4).map((r,i) =>
+          `<span style="font-size:12px;color:${i===0?'var(--green)':'var(--text2)'}">${i===0?'🏆 ':''}${r.name}: ${r.finalScore.toFixed(1)}%</span>`
+        ).join(' · ')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function showArchiveDetail(aid) {
+  const a = state.archive.find(x => x.id === aid);
+  if (!a) return;
+  const cfg = RACE_CFG[a.type] || RACE_CFG.custom;
+  document.getElementById('modal-title').textContent = `📁 ${a.name}`;
+  document.getElementById('raceModal').style.display = 'flex';
+  document.getElementById('modal-body').innerHTML = `
+    <p style="color:var(--text3);font-size:12px;margin-bottom:16px">
+      Saved: ${a.savedAt} · Type: ${a.type} · ${a.pctIn}% vote counted
+    </p>
+    ${(a.results || []).map((r, i) => `
+      <div class="candidate-row ${i===0?'winner':'loser'}" style="margin-bottom:8px">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-8">
+            <div style="width:12px;height:12px;border-radius:3px;background:${r.color}"></div>
+            ${i===0?'<span style="color:var(--gold)">🏆</span>':''}
+            <strong>${r.name}</strong>
+            ${r.party?`<span class="tag tag-gray">${r.party}</span>`:''}
+          </div>
+          <div class="flex items-center gap-8">
+            ${cfg.delegates?`<span class="tag tag-gold">${r.delegates} del</span>`:''}
+            <span style="font-weight:700;color:${i===0?'var(--green)':r.color}">${r.finalScore.toFixed(1)}%</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-8 mt-8">
+          <div class="progress-wrap"><div class="progress-bar" style="width:${Math.min(r.finalScore,100).toFixed(1)}%;background:${r.color}"></div></div>
+          <span style="font-size:11px;color:var(--text3);min-width:36px">${r.finalScore.toFixed(1)}%</span>
+        </div>
+      </div>
+    `).join('')}
+    <div class="flex gap-8 mt-16">
+      <button class="btn btn-danger btn-sm" onclick="deleteArchive('${aid}')">🗑️ Delete Entry</button>
+    </div>
+  `;
+}
+
+function deleteArchive(aid) {
+  state.archive = state.archive.filter(x => x.id !== aid);
+  saveState();
+  document.getElementById('raceModal').style.display = 'none';
+  renderArchive();
+}
+
+function clearArchive() {
+  if (confirm('Clear ALL archived results? This cannot be undone.')) {
+    state.archive = [];
+    saveState();
+    renderArchive();
+  }
+}
+
+// ================================================================
+//  ELECTION BUILDER
+// ================================================================
+function renderBuilder() {
+  const t = document.getElementById('builder-templates');
+  if (!t) return;
+  const all = Object.values(state.races);
+  if (all.length === 0) {
+    t.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:12px 0">No races created yet.</div>`;
+    return;
+  }
+  t.innerHTML = all.map(r => `
+    <div class="archive-item flex items-center justify-between">
+      <div>
+        <strong>${r.name}</strong>
+        <span class="tag tag-gray" style="margin-left:6px">${r.type}</span>
+        ${r.state?`<span class="tag tag-blue" style="margin-left:4px">${r.state}</span>`:''}
+      </div>
+      <div class="flex gap-8">
+        <span style="font-size:11px;color:var(--text3)">${r.candidates.length} candidates</span>
+        <button class="btn btn-sm btn-danger" onclick="deleteRace('${r.id}');renderBuilder()">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function createBuilderRace() {
+  const name = document.getElementById('builder-name').value.trim();
+  if (!name) { showToast('Enter a race name first', 'error'); return; }
+  const type = document.getElementById('builder-type').value;
+  const sn   = document.getElementById('builder-state').value.trim();
+  const r    = newRaceObj(type, name, sn);
+  r.delegates     = Number(document.getElementById('builder-delegates').value) || 1;
+  r.electoralVotes= Number(document.getElementById('builder-ev').value) || 0;
+  r.winnerRule    = document.getElementById('builder-rule').value;
+  const cwPct     = Number(document.getElementById('builder-cw').value) || 50;
+  const bwPct     = Number(document.getElementById('builder-bw').value) || 50;
+  r.customCw = cwPct / 100;
+  r.customBw = bwPct / 100;
+  state.races[r.id] = r;
+  saveState();
+  showToast('✅ Race created!');
+  document.getElementById('builder-name').value = '';
+  renderBuilder();
+}
+
+// ================================================================
+//  SCENARIO SIMULATOR
+// ================================================================
+function populateScenarioSelect() {
+  const sel = document.getElementById('scenario-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Select a race —</option>';
+  Object.values(state.races).forEach(r => {
+    sel.innerHTML += `<option value="${r.id}">${r.name} (${r.type}${r.state?' — '+r.state:''})</option>`;
+  });
+}
+
+function loadScenario() {
+  const raceId = document.getElementById('scenario-select').value;
+  if (!raceId) { showToast('Select a race first', 'error'); return; }
+  const r = state.races[raceId];
+  const workspace = document.getElementById('scenario-workspace');
+
+  const scenA = JSON.parse(JSON.stringify(r));
+  const scenB = JSON.parse(JSON.stringify(r));
+
+  // Apply random modifications to Scenario B
+  scenB.candidates.forEach(c => {
+    const swing = 0.3;
+    c.votes = Math.max(0, Math.round(Number(c.votes||0) * (1 + (Math.random()-0.5)*swing)));
+    c.buff  = Math.max(-20, Math.min(20, Number(c.buff||0) + Math.round((Math.random()-0.5)*10)));
+  });
+
+  const calcA = calcRaceObj(scenA);
+  const calcB = calcRaceObj(scenB);
+  const winnerChanged = calcA.results[0]?.name !== calcB.results[0]?.name;
+
+  workspace.innerHTML = `
+    <div class="card mb-16">
+      <h3>Scenario Analysis: <span style="color:var(--blue)">${r.name}</span></h3>
+      <p style="font-size:12px;color:var(--text3);margin-top:4px">Scenario B applies ±30% vote swings and ±5% buff variations</p>
+    </div>
+    <div class="flex gap-16 mb-16" style="flex-wrap:wrap">
+      <div class="scenario-col">
+        <h3 style="margin-bottom:12px;color:var(--blue)">📊 Scenario A — Base</h3>
+        <p style="font-size:11px;color:var(--text3);margin-bottom:12px">Original inputs, no modifications</p>
+        ${renderScenarioResults(calcA, r.type)}
+      </div>
+      <div class="scenario-col">
+        <h3 style="margin-bottom:12px;color:var(--gold)">🔀 Scenario B — Modified</h3>
+        <p style="font-size:11px;color:var(--text3);margin-bottom:12px">±30% vote swing, ±5% buff shifts applied</p>
+        ${renderScenarioResults(calcB, r.type)}
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:12px">Winner Change Analysis</h3>
+      ${winnerChanged
+        ? `<div class="tag tag-red" style="font-size:13px;padding:8px 12px">⚠️ Winner flipped! Scenario A: <strong>${calcA.results[0]?.name}</strong> → Scenario B: <strong>${calcB.results[0]?.name}</strong></div>`
+        : `<div class="tag tag-green" style="font-size:13px;padding:8px 12px">✅ No winner change — <strong>${calcA.results[0]?.name}</strong> wins both scenarios</div>`
+      }
+      <div class="mt-12" style="font-size:12px;color:var(--text3)">
+        ${calcA.results.map(rA => {
+          const rB = calcB.results.find(x => x.id === rA.id);
+          if (!rB) return '';
+          const diff = rB.finalScore - rA.finalScore;
+          return `<div style="margin-bottom:4px">${rA.name}: ${rA.finalScore.toFixed(1)}% → ${rB.finalScore.toFixed(1)}% <span style="color:${diff>=0?'var(--green)':'var(--red)'}">(${diff>=0?'+':''}${diff.toFixed(1)}%)</span></div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function calcRaceObj(r) {
+  const cfg = RACE_CFG[r.type] || RACE_CFG.custom;
+  const cw = r.customCw !== null && r.customCw !== undefined ? r.customCw : cfg.cw;
+  const bw = r.customBw !== null && r.customBw !== undefined ? r.customBw : cfg.bw;
+  const totalVotes    = r.candidates.reduce((s, c) => s + Number(c.votes||0), 0);
+  const totalCampaign = r.candidates.reduce((s, c) => s + campaignPoints(c), 0);
+  let results = r.candidates.map(c => {
+    const ballotPct   = totalVotes    > 0 ? Number(c.votes||0) / totalVotes    : 0;
+    const campaignPct = totalCampaign > 0 ? campaignPoints(c)  / totalCampaign : 0;
+    const base        = (campaignPct * cw) + (ballotPct * bw);
+    const mod         = Number(c.buff||0) / 100;
+    return { id:c.id, name:c.name, color:c.color, finalScore:Math.max(0, base + base*mod)*100, delegates:0 };
+  });
+  const total = results.reduce((s,x)=>s+x.finalScore,0);
+  if (total > 0) results.forEach(x => { x.finalScore = (x.finalScore/total)*100; });
+  results.sort((a,b) => b.finalScore - a.finalScore);
+  if (cfg.delegates && r.delegates > 0) {
+    results.forEach(x => { x.delegates = Math.round((x.finalScore/100)*r.delegates); });
+    const sum = results.reduce((s,x)=>s+x.delegates,0);
+    if (sum !== r.delegates && results.length > 0) results[0].delegates += (r.delegates - sum);
+  }
+  return { results };
+}
+
+function renderScenarioResults(calc, type) {
+  const cfg = RACE_CFG[type] || RACE_CFG.custom;
+  return calc.results.map((r, i) => `
+    <div class="flex items-center justify-between mb-6">
+      <span style="color:${i===0?'var(--green)':r.color};font-weight:${i===0?700:400}">${i===0?'🏆 ':''}${r.name}</span>
+      <div class="flex items-center gap-8">
+        ${cfg.delegates?`<span class="tag tag-gold">${r.delegates}d</span>`:''}
+        <span style="font-weight:700;color:${i===0?'var(--green)':r.color}">${r.finalScore.toFixed(1)}%</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-8 mb-10">
+      <div class="progress-wrap"><div class="progress-bar" style="width:${Math.min(r.finalScore,100).toFixed(1)}%;background:${r.color}"></div></div>
+    </div>
+  `).join('');
+}
+
+// ================================================================
+//  POLLING CENTER
+// ================================================================
+function savePoll() {
+  const race     = document.getElementById('poll-race').value.trim();
+  const pollster = document.getElementById('poll-pollster').value.trim();
+  const size     = Number(document.getElementById('poll-size').value) || 0;
+  const moe      = Number(document.getElementById('poll-moe').value)  || 3;
+  const raw      = document.getElementById('poll-results').value.trim();
+  if (!race || !pollster || !raw) { showToast('Fill in all required fields', 'error'); return; }
+
+  const results = {};
+  raw.split(',').forEach(p => {
+    const [n, v] = p.split(':');
+    if (n && v) results[n.trim()] = Number(v.trim()) || 0;
+  });
+
+  state.polls.unshift({ id:'p'+Date.now(), race, pollster, size, moe, results, date: new Date().toLocaleDateString() });
+  saveState();
+  renderPolls();
+  document.getElementById('poll-race').value = '';
+  document.getElementById('poll-pollster').value = '';
+  document.getElementById('poll-results').value = '';
+  showToast('📊 Poll saved!');
+}
+
+function renderPolls() {
+  const list = document.getElementById('poll-list');
+  const avgs = document.getElementById('poll-averages');
+  if (!list || !avgs) return;
+
+  if (state.polls.length === 0) {
+    list.innerHTML = `<div style="color:var(--text3);font-size:13px;padding:12px 0">No polls added yet.</div>`;
+    avgs.innerHTML = '';
+    return;
+  }
+
+  list.innerHTML = state.polls.map(p => `
+    <div class="archive-item" style="margin-bottom:8px">
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <strong style="font-size:13px">${p.race}</strong>
+        <div class="flex items-center gap-6">
+          <span class="tag tag-gray">n=${p.size.toLocaleString()}</span>
+          <span class="tag tag-gray">±${p.moe}%</span>
+          <button class="btn btn-sm btn-danger" onclick="deletePoll('${p.id}')">✕</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin:4px 0">${p.pollster} · ${p.date}</div>
+      <div class="flex gap-8 flex-wrap mt-4">
+        ${Object.entries(p.results).sort((a,b)=>b[1]-a[1]).map(([n,v]) =>
+          `<span style="font-size:12px"><strong>${n}</strong>: ${v}%</span>`
+        ).join(' · ')}
+      </div>
+    </div>
+  `).join('');
+
+  // Weighted averages
+  const byRace = {};
+  state.polls.forEach(p => {
+    if (!byRace[p.race]) byRace[p.race] = [];
+    byRace[p.race].push(p);
+  });
+
+  avgs.innerHTML = Object.entries(byRace).map(([race, polls]) => {
+    const cands = {};
+    let totalWeight = 0;
+    polls.forEach(p => {
+      const w = p.size || 1;
+      totalWeight += w;
+      Object.entries(p.results).forEach(([n, v]) => {
+        if (!cands[n]) cands[n] = 0;
+        cands[n] += v * w;
+      });
+    });
+    const sorted = Object.entries(cands).sort((a,b) => b[1]-a[1]);
+    return `
+      <div class="card-sm mb-10">
+        <div class="flex items-center justify-between mb-8">
+          <strong>${race}</strong>
+          <span style="font-size:11px;color:var(--text3)">${polls.length} poll${polls.length>1?'s':''} · weighted average</span>
+        </div>
+        <div class="flex gap-12 flex-wrap">
+          ${sorted.map(([n, v], i) =>
+            `<div style="text-align:center"><div style="font-size:16px;font-weight:700;color:${i===0?'var(--green)':'var(--text)'}">${(v/totalWeight).toFixed(1)}%</div><div style="font-size:11px;color:var(--text3)">${n}</div></div>`
+          ).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function deletePoll(pid) {
+  state.polls = state.polls.filter(p => p.id !== pid);
+  saveState();
+  renderPolls();
+}
+
+// ================================================================
+//  DASHBOARD
+// ================================================================
+function renderDashboard() {
+  const allRaces = Object.values(state.races);
+  const statsEl   = document.getElementById('dash-stats');
+  const controlEl = document.getElementById('dash-control');
+  const presEl    = document.getElementById('dash-pres');
+  const racesEl   = document.getElementById('dash-races');
+  if (!statsEl) return;
+
+  // Stats
+  const totalCandidates = allRaces.reduce((s,r) => s + r.candidates.length, 0);
+  statsEl.innerHTML = `
+    <div class="stat"><div class="stat-val">${allRaces.length}</div><div class="stat-lbl">Total Races</div></div>
+    <div class="stat"><div class="stat-val">${totalCandidates}</div><div class="stat-lbl">Candidates</div></div>
+    <div class="stat"><div class="stat-val">${state.polls.length}</div><div class="stat-lbl">Polls</div></div>
+    <div class="stat"><div class="stat-val">${state.archive.length}</div><div class="stat-lbl">Archived</div></div>
+  `;
+
+  // Control
+  const houseRaces  = allRaces.filter(r => r.type === 'house');
+  const senateRaces = allRaces.filter(r => r.type === 'senate');
+  const countWinners = races => {
+    const tally = {};
+    races.forEach(r => {
+      const calc = calcRace(r);
+      const w = calc.results[0];
+      if (w) { const key = w.party || w.name; tally[key] = (tally[key]||0) + 1; }
+    });
+    return tally;
+  };
+  const houseW  = countWinners(houseRaces);
+  const senateW = countWinners(senateRaces);
+  const renderTally = (t, label) => `
+    <div style="margin-bottom:12px">
+      <strong style="font-size:11px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase">${label}</strong>
+      ${Object.keys(t).length === 0
+        ? `<div style="color:var(--text3);font-size:12px;margin-top:4px">No races</div>`
+        : Object.entries(t).sort((a,b)=>b[1]-a[1]).map(([p,n]) =>
+            `<div class="flex items-center justify-between mt-6"><span style="font-size:13px">${p}</span><span class="tag tag-blue">${n} seat${n>1?'s':''}</span></div>`
+          ).join('')
+      }
+    </div>
+  `;
+  controlEl.innerHTML = renderTally(houseW, 'House') + '<div class="divider"></div>' + renderTally(senateW, 'Senate');
+
+  // House composition on dashboard
+  renderDashHouseComposition();
+
+  // Presidential
+  const presRaces = allRaces.filter(r => r.type === 'primary' || r.type === 'general');
+  const presLeaders = {};
+  presRaces.forEach(r => {
+    const calc = calcRace(r);
+    if (calc.results[0]) {
+      const n = calc.results[0].name;
+      const d = r.type === 'primary' ? (calc.results[0].delegates || 0) : (r.electoralVotes || 1);
+      presLeaders[n] = (presLeaders[n] || 0) + d;
+    }
+  });
+  presEl.innerHTML = Object.keys(presLeaders).length === 0
+    ? `<div style="color:var(--text3);font-size:12px">No presidential races active.</div>`
+    : Object.entries(presLeaders).sort((a,b) => b[1]-a[1]).slice(0,6).map(([n,d],i) => `
+        <div class="flex items-center justify-between mb-8">
+          <span style="font-weight:${i===0?700:400};color:${i===0?'var(--green)':'var(--text)'}">${i===0?'🏆 ':''}${n}</span>
+          <span class="tag tag-gold">${d} ${presRaces[0]?.type==='general'?'EV':'del'}</span>
+        </div>
+      `).join('');
+
+  // Status board
+  racesEl.innerHTML = allRaces.length === 0
+    ? `<div style="color:var(--text3);text-align:center;padding:32px">No races created yet. Go to any election tab to get started.</div>`
+    : `<table>
+        <thead><tr>
+          <th>Race</th><th>Type</th><th>State</th><th>Leading Candidate</th><th>Score</th><th>Status</th><th>% In</th>
+        </tr></thead>
+        <tbody>
+          ${allRaces.map(r => {
+            const calc = calcRace(r);
+            const w = calc.results[0];
+            return `<tr>
+              <td><strong>${r.name}</strong></td>
+              <td><span class="tag tag-gray">${r.type}</span></td>
+              <td style="color:var(--text2)">${r.state || '—'}</td>
+              <td>${w ? `<span style="color:var(--green);font-weight:600">🏆 ${w.name}</span>` : '—'}</td>
+              <td>${w ? `<strong>${w.finalScore.toFixed(1)}%</strong>` : '—'}</td>
+              <td>${getStatusBadge(calc.status)}</td>
+              <td><span style="font-weight:600">${r.pctIn}%</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+}
+
+function recalcAll(type) {
+  Object.values(state.races).filter(r => r.type === type).forEach(r => renderRaceCard(r.id));
+  showToast('🔄 All calculations refreshed!');
+}
+
+// ================================================================
+//  TOAST
+// ================================================================
+function showToast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.style.cssText = `
+    background:${type==='error'?'var(--red-bg)':'var(--green-bg)'};
+    border:1px solid ${type==='error'?'var(--red)':'var(--green)'};
+    color:${type==='error'?'var(--red)':'var(--green)'};
+  `;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 2500);
+}
+
+// ================================================================
+//  CLOCK
+// ================================================================
+function updateClock() {
+  const el = document.getElementById('clockDisplay');
+  if (el) el.textContent = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ================================================================
+//  HOUSE DISTRICTS — DEFAULT DATA
+// ================================================================
+const HOUSE_DISTRICTS = [
+  { region:'franklin',  name:'Franklin Region — Maine',                      state:'ME'       },
+  { region:'franklin',  name:'Franklin Region — New Hampshire & Vermont',    state:'NH-VT'    },
+  { region:'franklin',  name:'Franklin Region — New York',                   state:'NY'       },
+  { region:'franklin',  name:'Franklin Region — Pennsylvania',               state:'PA'       },
+  { region:'franklin',  name:'Franklin Region — Massachusetts & Rhode Island',state:'MA-RI'   },
+  { region:'franklin',  name:'Franklin Region — Connecticut & New Jersey',   state:'CT-NJ'    },
+  { region:'franklin',  name:'Franklin Region — Maryland & Delaware',        state:'MD-DE'    },
+  { region:'dixieland', name:'Dixieland Region — Kentucky',                  state:'KY'       },
+  { region:'dixieland', name:'Dixieland Region — Tennessee',                 state:'TN'       },
+  { region:'dixieland', name:'Dixieland Region — North Carolina',            state:'NC'       },
+  { region:'dixieland', name:'Dixieland Region — South Carolina',            state:'SC'       },
+  { region:'dixieland', name:'Dixieland Region — Georgia',                   state:'GA'       },
+  { region:'dixieland', name:'Dixieland Region — Florida',                   state:'FL'       },
+  { region:'dixieland', name:'Dixieland Region — Virginia & West Virginia',  state:'VA-WV'    },
+  { region:'dixieland', name:'Dixieland Region — Mississippi & Alabama',     state:'MS-AL'    },
+  { region:'lincoln',   name:'Lincoln Region — Michigan',                    state:'MI'       },
+  { region:'lincoln',   name:'Lincoln Region — Indiana & Ohio',              state:'IN-OH'    },
+  { region:'lincoln',   name:'Lincoln Region — Illinois',                    state:'IL'       },
+  { region:'lincoln',   name:'Lincoln Region — Missouri & Iowa',             state:'MO-IA'    },
+  { region:'lincoln',   name:'Lincoln Region — Wisconsin & Minnesota',       state:'WI-MN'    },
+  { region:'lincoln',   name:'Lincoln Region — North Dakota & South Dakota', state:'ND-SD'    },
+  { region:'lincoln',   name:'Lincoln Region — Nebraska & Kansas',           state:'NE-KS'    },
+  { region:'sierra',    name:'Sierra Region — California',                   state:'CA'       },
+  { region:'sierra',    name:'Sierra Region — Nevada',                       state:'NV'       },
+  { region:'sierra',    name:'Sierra Region — Washington & Oregon',          state:'WA-OR'    },
+  { region:'sierra',    name:'Sierra Region — Alaska & Hawaii',              state:'AK-HI'    },
+  { region:'sierra',    name:'Sierra Region — Montana, Wyoming & Idaho',     state:'MT-WY-ID' },
+  { region:'sierra',    name:'Sierra Region — Utah, Colorado & Arizona',     state:'UT-CO-AZ' },
+  { region:'amarillo',  name:'Amarillo Region — Oklahoma',                   state:'OK'       },
+  { region:'amarillo',  name:'Amarillo Region — Texas',                      state:'TX'       },
+  { region:'amarillo',  name:'Amarillo Region — New Mexico',                 state:'NM'       },
+  { region:'amarillo',  name:'Amarillo Region — Arkansas',                   state:'AR'       },
+  { region:'amarillo',  name:'Amarillo Region — Louisiana',                  state:'LA'       },
+];
+
+const REGION_COLORS = {
+  franklin:'#3b82f6', dixieland:'#ef4444', lincoln:'#22c55e', sierra:'#f59e0b', amarillo:'#f97316'
+};
+const REGION_LABELS = {
+  franklin:'🟦 Franklin', dixieland:'🟥 Dixieland', lincoln:'🟩 Lincoln', sierra:'🟨 Sierra', amarillo:'🟧 Amarillo'
+};
+
+function seedHouseDistricts() {
+  HOUSE_DISTRICTS.forEach(d => {
+    const r = newRaceObj('house', d.name, d.state);
+    r.region = d.region;
+    state.races[r.id] = r;
+  });
+  saveState();
+}
+
+function filterHouseRegion(region, btn) {
+  document.querySelectorAll('#house-region-tabs .btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const cards = document.querySelectorAll('#house-races .race-card');
+  cards.forEach(card => {
+    const raceId = card.id.replace('race-card-','');
+    const r = state.races[raceId];
+    if (!r) return;
+    const show = region === 'all' || (r.region || '') === region;
+    card.style.display = show ? '' : 'none';
+  });
+}
+
+// ================================================================
+//  HOUSE COMPOSITION
+// ================================================================
+const PARTY_PALETTE = {
+  DEM:'#3b82f6', REP:'#ef4444', IND:'#22c55e', LIB:'#f59e0b',
+  GRN:'#16a34a', CON:'#a855f7', OTH:'#9ba3bc'
+};
+
+function getPartyColor(party) {
+  return PARTY_PALETTE[party?.toUpperCase()] || '#9ba3bc';
+}
+
+function buildHouseComposition() {
+  const houseRaces = Object.values(state.races).filter(r => r.type === 'house');
+  const partySeats = {};
+  const totalSeats = houseRaces.length;
+  let called = 0;
+
+  houseRaces.forEach(r => {
+    const calc = calcRace(r);
+    const w = calc.results[0];
+    if (w && r.candidates.length > 0) {
+      const p = w.party || 'OTH';
+      partySeats[p] = (partySeats[p] || 0) + 1;
+      called++;
+    }
+  });
+
+  return { partySeats, totalSeats, called, houseRaces };
+}
+
+function renderHouseComposition() {
+  const el = document.getElementById('house-composition');
+  if (!el) return;
+
+  const { partySeats, totalSeats, called } = buildHouseComposition();
+
+  if (totalSeats === 0) {
+    el.innerHTML = `<div style="color:var(--text3);font-size:13px">No House districts exist yet.</div>`;
+    return;
+  }
+
+  const sorted = Object.entries(partySeats).sort((a,b) => b[1]-a[1]);
+  const majority = Math.floor(totalSeats / 2) + 1;
+  const leader = sorted[0];
+
+  let html = `
+    <div class="flex items-center gap-16 mb-12 flex-wrap">
+      <div class="stat" style="min-width:100px"><div class="stat-val">${totalSeats}</div><div class="stat-lbl">Total Seats</div></div>
+      <div class="stat" style="min-width:100px"><div class="stat-val">${called}</div><div class="stat-lbl">Seats Called</div></div>
+      <div class="stat" style="min-width:100px"><div class="stat-val">${majority}</div><div class="stat-lbl">Majority Needed</div></div>
+      ${leader ? `<div class="stat" style="min-width:140px"><div class="stat-val" style="color:${getPartyColor(leader[0])}">${leader[0]}</div><div class="stat-lbl">Leading Party (${leader[1]} seats)</div></div>` : ''}
+    </div>
+  `;
+
+  // Bar chart
+  html += `<div style="margin-bottom:16px">
+    <div style="display:flex;height:28px;border-radius:6px;overflow:hidden;border:1px solid var(--border)">
+      ${sorted.map(([p,n]) => {
+        const pct = (n / totalSeats * 100).toFixed(1);
+        return `<div style="width:${pct}%;background:${getPartyColor(p)};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;overflow:hidden;white-space:nowrap;padding:0 4px" title="${p}: ${n} seats (${pct}%)">${n >= 2 ? p : ''}</div>`;
+      }).join('')}
+      ${called < totalSeats ? `<div style="flex:1;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3)">Uncalled</div>` : ''}
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+      ${sorted.map(([p,n]) => {
+        const pct = (n / totalSeats * 100).toFixed(1);
+        const atMaj = n >= majority;
+        return `<div class="flex items-center gap-6">
+          <div style="width:10px;height:10px;border-radius:2px;background:${getPartyColor(p)}"></div>
+          <span style="font-size:12px;font-weight:${atMaj?700:400};color:${atMaj?'var(--green)':'var(--text2)'}">${p}: ${n} <span style="color:var(--text3)">(${pct}%)</span>${atMaj?' 🏆 MAJORITY':''}</span>
+        </div>`;
+      }).join('')}
+      ${called < totalSeats ? `<div class="flex items-center gap-6"><div style="width:10px;height:10px;border-radius:2px;background:var(--bg3);border:1px solid var(--border)"></div><span style="font-size:12px;color:var(--text3)">Uncalled: ${totalSeats - called}</span></div>` : ''}
+    </div>
+  </div>`;
+
+  // By region
+  const regionBreakdown = {};
+  Object.values(state.races).filter(r => r.type === 'house').forEach(r => {
+    const region = r.region || 'other';
+    if (!regionBreakdown[region]) regionBreakdown[region] = {};
+    const calc = calcRace(r);
+    const w = calc.results[0];
+    if (w && r.candidates.length > 0) {
+      const p = w.party || 'OTH';
+      regionBreakdown[region][p] = (regionBreakdown[region][p] || 0) + 1;
+    }
+  });
+
+  html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">`;
+  for (const [region, seats] of Object.entries(regionBreakdown)) {
+    const label = REGION_LABELS[region] || region;
+    const regionSorted = Object.entries(seats).sort((a,b)=>b[1]-a[1]);
+    html += `<div class="card-sm"><div style="font-size:12px;font-weight:700;margin-bottom:8px">${label}</div>
+      ${regionSorted.map(([p,n]) => `<div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-6"><div style="width:8px;height:8px;border-radius:2px;background:${getPartyColor(p)}"></div><span style="font-size:12px">${p}</span></div>
+        <span class="tag" style="background:${getPartyColor(p)}22;color:${getPartyColor(p)};border:1px solid ${getPartyColor(p)}44">${n}</span>
+      </div>`).join('')}
+    </div>`;
+  }
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
+// Also render on dashboard
+function renderDashHouseComposition() {
+  const el = document.getElementById('dash-house-composition');
+  if (!el) return;
+  const { partySeats, totalSeats, called } = buildHouseComposition();
+  if (totalSeats === 0) { el.innerHTML = `<div style="color:var(--text3);font-size:13px">No House races yet.</div>`; return; }
+  const sorted = Object.entries(partySeats).sort((a,b) => b[1]-a[1]);
+  const majority = Math.floor(totalSeats / 2) + 1;
+  el.innerHTML = `
+    <div style="display:flex;height:24px;border-radius:6px;overflow:hidden;border:1px solid var(--border);margin-bottom:10px">
+      ${sorted.map(([p,n]) => {
+        const pct = (n/totalSeats*100).toFixed(1);
+        return `<div style="width:${pct}%;background:${getPartyColor(p)};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;overflow:hidden;white-space:nowrap;padding:0 4px" title="${p}: ${n}">${n>=2?p:''}</div>`;
+      }).join('')}
+      ${called < totalSeats ? `<div style="flex:1;background:var(--bg3)"></div>` : ''}
+    </div>
+    <div class="flex gap-12 flex-wrap">
+      ${sorted.map(([p,n]) => {
+        const atMaj = n >= majority;
+        return `<div class="flex items-center gap-6">
+          <div style="width:10px;height:10px;border-radius:2px;background:${getPartyColor(p)}"></div>
+          <span style="font-size:13px;font-weight:${atMaj?700:400};color:${atMaj?'var(--green)':'var(--text2)'}">${p}: <strong>${n}</strong>${atMaj?' &#127942;':''}</span>
+        </div>`;
+      }).join('')}
+      <span style="font-size:12px;color:var(--text3)">Majority: ${majority} &bull; Called: ${called}/${totalSeats}</span>
+    </div>
+  `;
+}
+
+// ================================================================
+//  PARTY-WIDE BUFF / DEBUFF
+// ================================================================
+function applyPartyDebuff() {
+  const party  = document.getElementById('party-debuff-party').value;
+  const val    = Number(document.getElementById('party-debuff-val').value) || 0;
+  const houseRaces = Object.values(state.races).filter(r => r.type === 'house');
+  let count = 0;
+  houseRaces.forEach(r => {
+    r.candidates.forEach(c => {
+      if ((c.party || '').toUpperCase() === party.toUpperCase()) {
+        c.buff = val;
+        count++;
+      }
+    });
+  });
+  saveState();
+  houseRaces.forEach(r => renderRaceCard(r.id));
+  renderHouseComposition();
+  const log = document.getElementById('party-debuff-log');
+  if (log) log.innerHTML = `<span style="color:${val>=0?'var(--green)':'var(--red)'}">${val>=0?'+':''}${val}% modifier applied to ${count} ${party} candidate${count!==1?'s':''} across all House districts.</span>`;
+  showToast(`Applied ${val >= 0 ? '+' : ''}${val}% to all ${party} candidates`);
+}
+
+function resetPartyDebuff() {
+  const party = document.getElementById('party-debuff-party').value;
+  const houseRaces = Object.values(state.races).filter(r => r.type === 'house');
+  let count = 0;
+  houseRaces.forEach(r => {
+    r.candidates.forEach(c => {
+      if ((c.party || '').toUpperCase() === party.toUpperCase()) { c.buff = 0; count++; }
+    });
+  });
+  saveState();
+  houseRaces.forEach(r => renderRaceCard(r.id));
+  renderHouseComposition();
+  const log = document.getElementById('party-debuff-log');
+  if (log) log.innerHTML = `<span style="color:var(--text3)">Reset ${count} ${party} candidate modifier${count!==1?'s':''} to 0.</span>`;
+  showToast(`Reset ${party} modifiers`);
+}
+
+// ================================================================
+//  INIT
+// ================================================================
+loadState();
+renderDashboard();
+
+// Seed data on first load
+if (Object.keys(state.races).length === 0) {
+  // Seed all 33 House districts
+  seedHouseDistricts();
+
+  // Demo: Iowa Primary
+  const r1 = newRaceObj('primary', 'Iowa Democratic Primary', 'Iowa');
+  r1.delegates = 41; r1.pctIn = 65;
+  const c1a = newCandidate('Senator Adams');
+  c1a.votes = 4200; c1a.buff = 3; c1a.party = 'DEM'; c1a.color = '#3b82f6';
+  c1a.campaign.posters = 5; c1a.campaign.videos = 3;
+  c1a.campaign.log = ['[10:00 AM] Poster posted -> +1pt','[11:00 AM] Video ad aired -> +2pt'];
+  const c1b = newCandidate('Gov. Martinez');
+  c1b.votes = 3800; c1b.buff = -2; c1b.party = 'DEM'; c1b.color = '#22c55e';
+  c1b.campaign.posters = 3; c1b.campaign.videos = 2;
+  const c1c = newCandidate('Rep. Chen');
+  c1c.votes = 1200; c1c.buff = 0; c1c.party = 'DEM'; c1c.color = '#a855f7';
+  c1c.campaign.posters = 2;
+  r1.candidates = [c1a, c1b, c1c];
+  state.races[r1.id] = r1;
+
+  // Demo: Ohio Senate
+  const r2 = newRaceObj('senate', 'Ohio Senate Race', 'Ohio');
+  r2.pctIn = 80;
+  const c2a = newCandidate('R. Thompson');
+  c2a.votes = 52000; c2a.party = 'REP'; c2a.color = '#ef4444';
+  c2a.campaign.posters = 6; c2a.campaign.videos = 4;
+  const c2b = newCandidate('D. Williams');
+  c2b.votes = 48000; c2b.party = 'DEM'; c2b.color = '#3b82f6';
+  c2b.campaign.posters = 4; c2b.campaign.videos = 3;
+  r2.candidates = [c2a, c2b];
+  state.races[r2.id] = r2;
+
+  // Demo: Texas Governor
+  const r3 = newRaceObj('governor', 'Texas Governor Race', 'Texas');
+  r3.pctIn = 42;
+  const c3a = newCandidate('J. Harrison');
+  c3a.votes = 980000; c3a.party = 'REP'; c3a.color = '#ef4444'; c3a.buff = 2;
+  c3a.campaign.posters = 7; c3a.campaign.videos = 5;
+  const c3b = newCandidate('M. Rodriguez');
+  c3b.votes = 870000; c3b.party = 'DEM'; c3b.color = '#3b82f6';
+  c3b.campaign.posters = 5; c3b.campaign.videos = 4;
+  const c3c = newCandidate('L. Green');
+  c3c.votes = 120000; c3c.party = 'LIB'; c3c.color = '#f59e0b';
+  c3c.campaign.posters = 2;
+  r3.candidates = [c3a, c3b, c3c];
+  state.races[r3.id] = r3;
+
+  saveState();
+  renderDashboard();
+  setTimeout(() => {
+    renderRaceList('primary');
+    renderRaceList('senate');
+    renderRaceList('governor');
+  }, 150);
+}
+</script>
+</body>
+</html>
