@@ -1028,7 +1028,9 @@ function renderRaceCard(raceId) {
 
   const candidateRows = r.candidates.map((c, i) => {
     const res = calc.results.find(x => x.id === c.id) || {};
-    const isWinner = i === 0 && r.candidates.length > 1;
+    const isWinner =
+    calc.results.length > 0 &&
+    calc.results[0].id === c.id;
     const pct = (res.finalScore || 0).toFixed(1);
     const camPct = (res.campaignPct || 0).toFixed(1);
     const ballPct = (res.ballotPct  || 0).toFixed(1);
